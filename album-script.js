@@ -1,31 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // --- TỰ ĐỘNG RESET VÀ LƯU DỮ LIỆU THEO ID TRÊN URL ---
-  function getUserId() {
-    const url = new URL(window.location.href);
-    return url.searchParams.get('id') || 'default';
-  }
-  function getStorageKey(key) {
-    return getUserId() + '_' + key;
-  }
-  function resetUserData() {
-    const keys = ['albumTitle','albumMessage','albumPhotos'];
-    keys.forEach(k => { localStorage.removeItem(getStorageKey(k)); });
-  }
-  resetUserData();
-  // Lấy dữ liệu động
-  const message = localStorage.getItem(getStorageKey('albumMessage')) || "Hành trình của chúng ta bắt đầu từ hôm nay. Mỗi khoảnh khắc bên nhau sẽ là một viên gạch xây nên ngôi nhà hạnh phúc. Cùng nhau, chúng ta sẽ viết nên một câu chuyện tình yêu vĩnh cửu. ❤️";
-  let photoUrls = [];
-  try { photoUrls = JSON.parse(localStorage.getItem(getStorageKey('albumPhotos')) || '[]'); } catch {}
-  if (photoUrls.length === 0) {
-    photoUrls = [
-      "img/1.jpg", "img/2.jpg", "img/3.jpg", "img/4.jpg", "img/5.jpg",
-      "img/6.jpg", "img/7.jpg", "img/8.jpg", "img/9.jpg", "img/10.jpg",
-      "img/11.jpg", "img/12.jpg", "img/13.jpg", "img/14.jpg", "img/15.jpg",
-      "img/16.jpg", "img/17.jpg", "img/18.jpg", "img/19.jpg", "img/11.jpg",
-      "img/1.jpg", "img/2.jpg", "img/3.jpg", "img/4.jpg", "img/5.jpg",
-      "img/6.jpg", "img/7.jpg", "img/8.jpg", "img/9.jpg", "img/10.jpg",
-    ];
-  }
+  const message =
+    "Hành trình của chúng ta bắt đầu từ hôm nay. Mỗi khoảnh khắc bên nhau sẽ là một viên gạch xây nên ngôi nhà hạnh phúc. Cùng nhau, chúng ta sẽ viết nên một câu chuyện tình yêu vĩnh cửu. ❤️";
+
+  const photoUrls = [
+    "img/1.jpg", "img/2.jpg", "img/3.jpg", "img/4.jpg", "img/5.jpg",
+    "img/6.jpg", "img/7.jpg", "img/8.jpg", "img/9.jpg", "img/10.jpg",
+    "img/11.jpg", "img/12.jpg", "img/13.jpg", "img/14.jpg", "img/15.jpg",
+    "img/16.jpg", "img/17.jpg", "img/18.jpg", "img/19.jpg", "img/11.jpg",
+    "img/1.jpg", "img/2.jpg", "img/3.jpg", "img/4.jpg", "img/5.jpg",
+    "img/6.jpg", "img/7.jpg", "img/8.jpg", "img/9.jpg", "img/10.jpg",
+  ];
 
   const music = document.getElementById("music");
   const musicBtn = document.getElementById("musicBtn");

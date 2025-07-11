@@ -17,141 +17,37 @@
 </head>
 <body>
   <audio id="music" loop src="music.mp3"></audio>
-  <button class="music-btn" id="musicBtn"><i class="fa-solid fa-music"></i></button>
-  <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
-
-  <button id="open-settings" style="position:fixed;top:18px;right:18px;z-index:999;background:#e91e63;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:1em;cursor:pointer;">Cài đặt</button>
-  <div id="settings-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center;">
-    <div style="background:#fff;padding:32px 24px;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,0.18);max-width:95vw;max-height:95vh;overflow:auto;">
-      <h2 style="color:#e91e63;font-family:'Dancing Script',cursive;">⚙️ Quản lý Album</h2>
-      <form id="settings-form">
-        <label>Tiêu đề album: <input type="text" id="album-title-input"></label><br><br>
-        <label>Lời nhắn: <textarea id="album-message-input" rows="2" style="width:90%"></textarea></label><br><br>
-        <fieldset style="border:1px solid #e91e63;border-radius:8px;padding:12px;margin-bottom:12px;">
-          <legend style="color:#e91e63;">Danh sách ảnh</legend>
-          <div id="photos-list"></div>
-          <button type="button" id="add-photo" style="margin-top:8px;background:#e91e63;color:#fff;border:none;border-radius:8px;padding:6px 18px;font-size:1em;cursor:pointer;">Thêm ảnh</button>
-        </fieldset>
-        <button type="submit" style="background:#e91e63;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:1.1em;cursor:pointer;">Lưu</button>
-        <button type="button" id="close-settings" style="margin-left:12px;background:#eee;color:#e91e63;border:none;border-radius:8px;padding:10px 28px;font-size:1.1em;cursor:pointer;">Đóng</button>
-      </form>
-    </div>
-  </div>
+  
+  <button class="music-btn" id="musicBtn">
+    <i class="fa-solid fa-music"></i>
+  </button>
+  <a href="index.html" class="back-btn">
+    <i class="fa-solid fa-arrow-left"></i>
+  </a>
 
   <div class="main-content">
-    <h1 id="album-title">💕 Khoảnh Khắc Tình Yêu 💕 <button id="edit-title" style="background:#e91e63;color:#fff;border:none;border-radius:8px;padding:4px 12px;font-size:1em;cursor:pointer;">✏️</button></h1>
-    <div class="message" id="album-message">Hãy lưu giữ những khoảnh khắc tuyệt vời nhất của chúng ta!</div>
+    <h1>💕 Khoảnh Khắc Tình Yêu 💕</h1>
+    <div class="message" id="typing"></div>
     <button class="action-btn" id="albumBtn" style="display:none;">✨ Kho Báu Của Chúng Tớ ✨</button>
     <a href="gallery.html" class="action-btn" id="galleryBtn" style="display:none;">🖼️ Kho Ảnh 🖼️</a>
-    <div id="album-photos" style="margin-top:24px;display:flex;flex-wrap:wrap;gap:18px;justify-content:center;"></div>
-  </div>
-  <div class="firework-container" id="fireworkContainer"></div>
   <script>
-    // --- TỰ ĐỘNG RESET VÀ LƯU DỮ LIỆU THEO ID TRÊN URL ---
-    function getUserId() {
-      const url = new URL(window.location.href);
-      return url.searchParams.get('id') || 'default';
-    }
-    function getStorageKey(key) {
-      return getUserId() + '_' + key;
-    }
-    function resetUserData() {
-      const keys = ['albumTitle','albumMessage','albumPhotos'];
-      keys.forEach(k => { localStorage.removeItem(getStorageKey(k)); });
-    }
-    resetUserData();
-    // Popup settings logic
-    const openSettingsBtn = document.getElementById('open-settings');
-    const settingsModal = document.getElementById('settings-modal');
-    const closeSettingsBtn = document.getElementById('close-settings');
-    openSettingsBtn.onclick = () => { settingsModal.style.display = 'flex'; loadSettingsForm(); };
-    closeSettingsBtn.onclick = () => settingsModal.style.display = 'none';
-    document.getElementById('settings-form').onsubmit = function(e) {
-      e.preventDefault(); saveSettingsForm(); settingsModal.style.display = 'none'; applyUserSettings(); };
-    function renderPhotosForm() {
-      const list = document.getElementById('photos-list');
-      list.innerHTML = '';
-      let photos = [];
-      try { photos = JSON.parse(localStorage.getItem(getStorageKey('albumPhotos')) || '[]'); } catch {}
-      photos.forEach((p, idx) => {
-        const div = document.createElement('div');
-        div.style.marginBottom = '8px';
-        div.innerHTML = `<input type="text" value="${p}" class="photo-url" placeholder="Link ảnh hoặc base64"> <button type="button" class="remove-photo" data-idx="${idx}" style="background:#eee;color:#e91e63;border:none;border-radius:8px;padding:4px 12px;">Xóa</button>`;
-        list.appendChild(div);
-      });
-      list.querySelectorAll('.remove-photo').forEach(btn => {
-        btn.onclick = function() {
-          photos.splice(+btn.dataset.idx, 1);
-          localStorage.setItem(getStorageKey('albumPhotos'), JSON.stringify(photos));
-          renderPhotosForm();
-        };
-      });
-    }
-    document.getElementById('add-photo').onclick = function() {
-      let photos = [];
-      try { photos = JSON.parse(localStorage.getItem(getStorageKey('albumPhotos')) || '[]'); } catch {}
-      photos.push('');
-      localStorage.setItem(getStorageKey('albumPhotos'), JSON.stringify(photos));
-      renderPhotosForm();
-    };
-    function loadSettingsForm() {
-      const s = localStorage;
-      document.getElementById('album-title-input').value = s.getItem(getStorageKey('albumTitle')) || '';
-      document.getElementById('album-message-input').value = s.getItem(getStorageKey('albumMessage')) || '';
-      renderPhotosForm();
-    }
-    function saveSettingsForm() {
-      const s = localStorage;
-      s.setItem(getStorageKey('albumTitle'), document.getElementById('album-title-input').value);
-      s.setItem(getStorageKey('albumMessage'), document.getElementById('album-message-input').value);
-      // photos
-      const photos = [];
-      document.querySelectorAll('#photos-list > div').forEach(div => {
-        const url = div.querySelector('.photo-url').value;
-        if (url) photos.push(url);
-      });
-      s.setItem(getStorageKey('albumPhotos'), JSON.stringify(photos));
-    }
-    // Hiển thị nội dung từ LocalStorage và cho phép chỉnh trực tiếp
-    function applyUserSettings() {
-      const s = localStorage;
-      document.getElementById('album-title').innerHTML = `${s.getItem(getStorageKey('albumTitle')) || '💕 Khoảnh Khắc Tình Yêu 💕'} <button id='edit-title' style='background:#e91e63;color:#fff;border:none;border-radius:8px;padding:4px 12px;font-size:1em;cursor:pointer;'>✏️</button>`;
-      document.getElementById('album-message').innerHTML = s.getItem(getStorageKey('albumMessage')) || 'Hãy lưu giữ những khoảnh khắc tuyệt vời nhất của chúng ta!';
-      // Ảnh album
-      let photos = [];
-      try { photos = JSON.parse(s.getItem(getStorageKey('albumPhotos')) || '[]'); } catch {}
-      const albumPhotos = document.getElementById('album-photos');
-      albumPhotos.innerHTML = '';
-      photos.forEach((url, idx) => {
-        const div = document.createElement('div');
-        div.style.position = 'relative';
-        div.style.width = '120px';
-        div.style.height = '120px';
-        div.style.borderRadius = '12px';
-        div.style.overflow = 'hidden';
-        div.style.boxShadow = '0 2px 8px rgba(233,30,99,0.12)';
-        div.innerHTML = `<img src='${url}' style='width:100%;height:100%;object-fit:cover;'> <button class='remove-photo' data-idx='${idx}' style='position:absolute;top:6px;right:6px;background:#fff;color:#e91e63;border:none;border-radius:8px;padding:2px 8px;cursor:pointer;'>🗑️</button>`;
-        albumPhotos.appendChild(div);
-      });
-      albumPhotos.querySelectorAll('.remove-photo').forEach(btn => {
-        btn.onclick = function() {
-          photos.splice(+btn.dataset.idx, 1);
-          s.setItem(getStorageKey('albumPhotos'), JSON.stringify(photos));
-          applyUserSettings();
-        };
-      });
-      // Chỉnh sửa tiêu đề
-      document.getElementById('edit-title').onclick = function() {
-        let val = prompt('Nhập tiêu đề mới:', s.getItem(getStorageKey('albumTitle')) || '');
-        if (val !== null) { s.setItem(getStorageKey('albumTitle'), val); applyUserSettings(); }
-      };
-      // Chỉnh sửa lời nhắn
-      document.getElementById('album-message').onclick = function() {
-        let val = prompt('Nhập lời nhắn mới:', s.getItem(getStorageKey('albumMessage')) || '');
-        if (val !== null) { s.setItem(getStorageKey('albumMessage'), val); applyUserSettings(); }
-      };
-    }
-    applyUserSettings();
+    // Hiện nút sau khi chữ chạy xong với hiệu ứng
+    document.addEventListener('DOMContentLoaded', function() {
+      function showButtons() {
+        var btn1 = document.getElementById('albumBtn');
+        var btn2 = document.getElementById('galleryBtn');
+        btn1.style.display = 'inline-block';
+        btn2.style.display = 'inline-block';
+        setTimeout(function() {
+          btn1.classList.add('show');
+          btn2.classList.add('show');
+        }, 50);
+      }
+      setTimeout(showButtons, 12500);
+    });
   </script>
+  </div>
+  
+  <div class="firework-container" id="fireworkContainer"></div>
 </body>
 </html>

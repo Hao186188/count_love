@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    let startDate = localStorage.getItem('startDate') || '2025-2-7 00:00:00';
+    const startDate = '2025-2-7 00:00:00';
     const sweetMessages = [
         'Chúc em một ngày thật vui vẻ và hạnh phúc nhé! 💖',
         'Anh yêu em nhiều hơn hôm qua và ít hơn ngày mai! 💌',
@@ -23,17 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const today = new Date();
         const dayIndex = Math.floor(today.getTime() / (1000 * 3600 * 24));
         const msg = sweetMessages[dayIndex % sweetMessages.length];
-        const msgElement = document.getElementById('love-message');
+        const msgElement = document.querySelector('.love-message p');
         if (msgElement) {
-            // Nếu người dùng đã nhập lời nhắn thì ưu tiên hiển thị
-            const customMsg = localStorage.getItem('loveMessage');
-            msgElement.innerHTML = customMsg ? customMsg : msg;
+            msgElement.textContent = msg;
         }
     }
 
     function updateLoveTimer() {
-        // Lấy lại ngày bắt đầu yêu từ LocalStorage mỗi lần cập nhật
-        startDate = localStorage.getItem('startDate') || startDate;
         const startDateObj = new Date(startDate);
         const currentDate = new Date();
 
@@ -71,14 +67,4 @@ document.addEventListener('DOMContentLoaded', () => {
     showDailyMessage();
     // Chạy lần đầu ngay khi tải trang
     updateLoveTimer();
-    // Nếu người dùng chỉnh ngày bắt đầu yêu thì cập nhật lại bộ đếm
-    window.addEventListener('storage', function(e) {
-      if (e.key === 'startDate') {
-        startDate = localStorage.getItem('startDate') || startDate;
-        updateLoveTimer();
-      }
-      if (e.key === 'loveMessage') {
-        showDailyMessage();
-      }
-    });
 });
