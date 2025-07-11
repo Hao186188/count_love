@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kho Ảnh</title>
+  <link rel="icon" type="image/x-icon" href="img/tui.png">
+  <link rel="stylesheet" href="album-style.css">
+  <link rel="stylesheet" href="gallery-style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="album-script.js" defer></script>
+  <script src="gallery-script.js" defer></script>
+</head>
+<body>
+  <a href="album.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+  <button id="open-settings" style="position:fixed;top:18px;right:18px;z-index:999;background:#e91e63;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:1em;cursor:pointer;">Cài đặt</button>
+  <div id="settings-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center;">
+    <div style="background:#fff;padding:32px 24px;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,0.18);max-width:95vw;max-height:95vh;overflow:auto;">
+      <h2 style="color:#e91e63;font-family:'Dancing Script',cursive;">⚙️ Quản lý Kho Ảnh</h2>
+      <form id="settings-form">
+        <fieldset style="border:1px solid #e91e63;border-radius:8px;padding:12px;margin-bottom:12px;">
+          <legend style="color:#e91e63;">Danh sách ảnh</legend>
+          <div id="photos-list"></div>
+          <button type="button" id="add-photo" style="margin-top:8px;background:#e91e63;color:#fff;border:none;border-radius:8px;padding:6px 18px;font-size:1em;cursor:pointer;">Thêm ảnh</button>
+        </fieldset>
+        <button type="submit" style="background:#e91e63;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:1.1em;cursor:pointer;">Lưu</button>
+        <button type="button" id="close-settings" style="margin-left:12px;background:#eee;color:#e91e63;border:none;border-radius:8px;padding:10px 28px;font-size:1.1em;cursor:pointer;">Đóng</button>
+      </form>
+    </div>
+  </div>
+  <div class="main-content">
+    <h1>🖼️ Kho Ảnh 🖼️</h1>
+    <div class="gallery-container" id="gallery-container"></div>
+  </div>
+  <script>
+    // --- TỰ ĐỘNG RESET VÀ LƯU DỮ LIỆU THEO ID TRÊN URL ---
+    function getUserId() {
+      const url = new URL(window.location.href);
+      return url.searchParams.get('id') || 'default';
+    }
+    function getStorageKey(key) {
+      return getUserId() + '_' + key;
+    }
+    function resetUserData() {
+      localStorage.removeItem(getStorageKey('galleryPhotos'));
+    }
+    resetUserData();
+    // Popup settings logic
+    const openSettingsBtn = document.getElementById('open-settings');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsBtn = document.getElementById('close-settings');
+    openSettingsBtn.onclick = () => { settingsModal.style.display = 'flex'; loadSettingsForm(); };
+    closeSettingsBtn.onclick = () => settingsModal.style.display = 'none';
+    document.getElementById('settings-form').onsubmit = function(e) {
+      e.preventDefault(); saveSettingsForm(); settingsModal.style.display = 'none'; applyUserSettings(); };
+    function renderPhotosForm() {
+      const list = document.getElementById('photos-list');
+      list.innerHTML = '';
+      let photos = [];
+      try { photos = JSON.parse(localStorage.getItem(getStorageKey('galleryPhotos')) || '[]'); } catch {}
+      photos.forEach((p, idx) => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '8px';
+        div.innerHTML = `<input type="text" value="${p}" class="photo-url" placeholder="Link ảnh hoặc base64"> <button type="button" class="remove-photo" data-idx="${idx}" style="background:#eee;color:#e91e63;border:none;border-radius:8px;padding:4px 12px;">Xóa</button>`;
+        list.appendChild(div);
+      });
+      list.querySelectorAll('.remove-photo').forEach(btn => {
+        btn.onclick = function() {
+          photos.splice(+btn.dataset.idx, 1);
+          localStorage.setItem(getStorageKey('galleryPhotos'), JSON.stringify(photos));
+          renderPhotosForm();
+        };
+      });
+    }
+    document.getElementById('add-photo').onclick = function() {
+      let photos = [];
+      try { photos = JSON.parse(localStorage.getItem(getStorageKey('galleryPhotos')) || '[]'); } catch {}
+      photos.push('');
+      localStorage.setItem(getStorageKey('galleryPhotos'), JSON.stringify(photos));
+      renderPhotosForm();
+    };
+    function loadSettingsForm() {
+      renderPhotosForm();
+    }
+    function saveSettingsForm() {
+      const photos = [];
+      document.querySelectorAll('#photos-list > div').forEach(div => {
+        const url = div.querySelector('.photo-url').value;
+        if (url) photos.push(url);
+      });
+      localStorage.setItem(getStorageKey('galleryPhotos'), JSON.stringify(photos));
+    }
+    // Hiển thị nội dung từ LocalStorage và cho phép chỉnh trực tiếp
+    function applyUserSettings() {
+      let photos = [];
+      try { photos = JSON.parse(localStorage.getItem(getStorageKey('galleryPhotos')) || '[]'); } catch {}
+      const gallery = document.getElementById('gallery-container');
+      gallery.innerHTML = '';
+      photos.forEach((url, idx) => {
+        const div = document.createElement('div');
+        div.style.position = 'relative';
+        div.style.width = '120px';
+        div.style.height = '120px';
+        div.style.borderRadius = '12px';
+        div.style.overflow = 'hidden';
+        div.style.boxShadow = '0 2px 8px rgba(233,30,99,0.12)';
+        div.style.margin = '8px';
+        div.innerHTML = `<img src='${url}' style='width:100%;height:100%;object-fit:cover;'> <button class='remove-photo' data-idx='${idx}' style='position:absolute;top:6px;right:6px;background:#fff;color:#e91e63;border:none;border-radius:8px;padding:2px 8px;cursor:pointer;'>🗑️</button>`;
+        gallery.appendChild(div);
+      });
+      gallery.querySelectorAll('.remove-photo').forEach(btn => {
+        btn.onclick = function() {
+          photos.splice(+btn.dataset.idx, 1);
+          localStorage.setItem(getStorageKey('galleryPhotos'), JSON.stringify(photos));
+          applyUserSettings();
+        };
+      });
+    }
+    applyUserSettings();
+  </script>
+</body>
+</html>
