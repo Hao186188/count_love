@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đếm Ngày Yêu</title>
+    <link rel="icon" type="image/x-icon" href="img/tui.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="sparkle-overlay"></div>
+    <div id="theme-effect"></div>
+    <!-- Private Modal -->
+    <!-- Private Mode đã bị xóa -->
+    <!-- Settings Modal -->
+    <button id="open-settings" style="position:fixed;top:18px;right:18px;z-index:999;background:#e91e63;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:1em;cursor:pointer;">Cài đặt</button>
+    <div id="settings-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center;">
+      <div style="background:#fff;padding:32px 24px;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,0.18);max-width:95vw;max-height:95vh;overflow:auto;">
+        <h2 style="color:#e91e63;font-family:'Dancing Script',cursive;">⚙️ Quản lý thông tin trang</h2>
+        <form id="settings-form">
+          <label>Ngày bắt đầu yêu: <input type="date" id="start-date"></label><br><br>
+          <label>Lời nhắn: <textarea id="love-message-input" rows="2" style="width:90%"></textarea></label><br><br>
+          <fieldset style="border:1px solid #e91e63;border-radius:8px;padding:12px;margin-bottom:12px;">
+            <legend style="color:#e91e63;">Thông tin Nam</legend>
+            <label>Tên: <input type="text" id="name-male-input"></label><br>
+            <label>Biệt danh: <input type="text" id="nickname-male-input"></label><br>
+            <label>Sinh nhật: <input type="date" id="birthday-male-input"></label><br>
+            <label>Ảnh: <input type="text" id="avatar-male-input" placeholder="Link ảnh hoặc chọn"><input type="file" id="avatar-male-file" accept="image/*"></label><br>
+          </fieldset>
+          <fieldset style="border:1px solid #e91e63;border-radius:8px;padding:12px;margin-bottom:12px;">
+            <legend style="color:#e91e63;">Thông tin Nữ</legend>
+            <label>Tên: <input type="text" id="name-female-input"></label><br>
+            <label>Biệt danh: <input type="text" id="nickname-female-input"></label><br>
+            <label>Sinh nhật: <input type="date" id="birthday-female-input"></label><br>
+            <label>Ảnh: <input type="text" id="avatar-female-input" placeholder="Link ảnh hoặc chọn"><input type="file" id="avatar-female-file" accept="image/*"></label><br>
+          </fieldset>
+          <fieldset style="border:1px solid #e91e63;border-radius:8px;padding:12px;margin-bottom:12px;">
+            <legend style="color:#e91e63;">Mốc kỷ niệm</legend>
+            <div id="milestones-list"></div>
+            <button type="button" id="add-milestone" style="margin-top:8px;background:#e91e63;color:#fff;border:none;border-radius:8px;padding:6px 18px;font-size:1em;cursor:pointer;">Thêm mốc</button>
+          </fieldset>
+          <button type="submit" style="background:#e91e63;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:1.1em;cursor:pointer;">Lưu</button>
+          <button type="button" id="close-settings" style="margin-left:12px;background:#eee;color:#e91e63;border:none;border-radius:8px;padding:10px 28px;font-size:1.1em;cursor:pointer;">Đóng</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      // XÓA Private Mode
+      // Settings Modal logic nâng cấp
+      const openSettingsBtn = document.getElementById('open-settings');
+      const settingsModal = document.getElementById('settings-modal');
+      const closeSettingsBtn = document.getElementById('close-settings');
+      openSettingsBtn.onclick = () => {
+        settingsModal.style.display = 'flex';
+        loadSettingsForm();
+      };
+      closeSettingsBtn.onclick = () => settingsModal.style.display = 'none';
+      document.getElementById('settings-form').onsubmit = function(e) {
+        e.preventDefault();
+        saveSettingsForm();
+        settingsModal.style.display = 'none';
+        location.reload();
+      };
+      // Ảnh upload
+      document.getElementById('avatar-male-file').onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            document.getElementById('avatar-male-input').value = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      document.getElementById('avatar-female-file').onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            document.getElementById('avatar-female-input').value = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      // Mốc kỷ niệm động
+      function renderMilestonesForm() {
+        const list = document.getElementById('milestones-list');
+        list.innerHTML = '';
+        let milestones = [];
+        try { milestones = JSON.parse(localStorage.getItem('milestones') || '[]'); } catch {}
+        milestones.forEach((m, idx) => {
+          const div = document.createElement('div');
+          div.style.marginBottom = '8px';
+          div.innerHTML = `<input type="date" value="${m.date}" class="milestone-date"> <input type="text" value="${m.label}" class="milestone-label" placeholder="Tên mốc"> <button type="button" class="remove-milestone" data-idx="${idx}" style="background:#eee;color:#e91e63;border:none;border-radius:8px;padding:4px 12px;">Xóa</button>`;
+          list.appendChild(div);
+        });
+        // Xóa mốc
+        list.querySelectorAll('.remove-milestone').forEach(btn => {
+          btn.onclick = function() {
+            milestones.splice(+btn.dataset.idx, 1);
+            localStorage.setItem('milestones', JSON.stringify(milestones));
+            renderMilestonesForm();
+          };
+        });
+      }
+      document.getElementById('add-milestone').onclick = function() {
+        let milestones = [];
+        try { milestones = JSON.parse(localStorage.getItem('milestones') || '[]'); } catch {}
+        milestones.push({ date: '', label: '' });
+        localStorage.setItem('milestones', JSON.stringify(milestones));
+        renderMilestonesForm();
+      };
+      function loadSettingsForm() {
+        const s = localStorage;
+        document.getElementById('start-date').value = s.getItem('startDate') || '';
+        document.getElementById('love-message-input').value = s.getItem('loveMessage') || '';
+        document.getElementById('name-male-input').value = s.getItem('nameMale') || '';
+        document.getElementById('nickname-male-input').value = s.getItem('nicknameMale') || '';
+        document.getElementById('birthday-male-input').value = s.getItem('birthdayMale') || '';
+        document.getElementById('avatar-male-input').value = s.getItem('avatarMale') || '';
+        document.getElementById('name-female-input').value = s.getItem('nameFemale') || '';
+        document.getElementById('nickname-female-input').value = s.getItem('nicknameFemale') || '';
+        document.getElementById('birthday-female-input').value = s.getItem('birthdayFemale') || '';
+        document.getElementById('avatar-female-input').value = s.getItem('avatarFemale') || '';
+        renderMilestonesForm();
+      }
+      function saveSettingsForm() {
+        const s = localStorage;
+        s.setItem('startDate', document.getElementById('start-date').value);
+        s.setItem('loveMessage', document.getElementById('love-message-input').value);
+        s.setItem('nameMale', document.getElementById('name-male-input').value);
+        s.setItem('nicknameMale', document.getElementById('nickname-male-input').value);
+        s.setItem('birthdayMale', document.getElementById('birthday-male-input').value);
+        s.setItem('avatarMale', document.getElementById('avatar-male-input').value);
+        s.setItem('nameFemale', document.getElementById('name-female-input').value);
+        s.setItem('nicknameFemale', document.getElementById('nickname-female-input').value);
+        s.setItem('birthdayFemale', document.getElementById('birthday-female-input').value);
+        s.setItem('avatarFemale', document.getElementById('avatar-female-input').value);
+        // milestones
+        const milestones = [];
+        document.querySelectorAll('#milestones-list > div').forEach(div => {
+          const date = div.querySelector('.milestone-date').value;
+          const label = div.querySelector('.milestone-label').value;
+          if (date && label) milestones.push({ date, label });
+        });
+        s.setItem('milestones', JSON.stringify(milestones));
+      }
+    </script>
+    <script>
+      // Tự động đổi theme theo thời gian trong ngày và hiệu ứng mặt trời/trăng/sao
+      function setThemeByTime() {
+        var hour = new Date().getHours();
+        var body = document.body;
+        var themeEffect = document.getElementById('theme-effect');
+        themeEffect.innerHTML = '';
+        if (hour >= 6 && hour < 18) {
+          body.classList.add('day-theme');
+          body.classList.remove('night-theme');
+          themeEffect.innerHTML = '<div class="sun"></div>';
+        } else {
+          body.classList.add('night-theme');
+          body.classList.remove('day-theme');
+          themeEffect.innerHTML = '<div class="moon"></div><div class="stars"></div>';
+          // Tạo sao động
+          var stars = themeEffect.querySelector('.stars');
+          for (var i = 0; i < 60; i++) {
+            var star = document.createElement('div');
+            star.className = 'star';
+            star.style.top = Math.random() * 100 + 'vh';
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.opacity = Math.random() * 0.7 + 0.3;
+            star.style.width = star.style.height = (Math.random() * 2 + 1) + 'px';
+            stars.appendChild(star);
+          }
+        }
+      }
+      setThemeByTime();
+      setInterval(setThemeByTime, 60000);
+    </script>
+    <script>
+      // Tự động đổi theme theo thời gian trong ngày
+      function setThemeByTime() {
+        var hour = new Date().getHours();
+        var body = document.body;
+        if (hour >= 6 && hour < 18) {
+          body.classList.add('day-theme');
+          body.classList.remove('night-theme');
+        } else {
+          body.classList.add('night-theme');
+          body.classList.remove('day-theme');
+        }
+      }
+      setThemeByTime();
+      setInterval(setThemeByTime, 60000);
+    </script>
+
+    <div class="love-counter-container">
+        <h1 class="main-title">Chúng Ta Đã Bên Nhau</h1>
+
+        <div class="couple-display">
+    <div class="avatar-container">
+        <div class="avatar">
+            <img id="avatar-male-img" src="img/1.jpg" alt="Ảnh Nam">
+        </div>
+        <p class="name" id="name-male">Nhật Hào</p>
+        <p class="nickname" id="nickname-male">Biệt danh: Heo</p>
+        <p class="birthday" id="birthday-male">Sinh nhật: 18/06/2007</p>
+        <div class="birthday-countdown">Đếm ngược đến sinh nhật: <span id="countdown-birthday-hao"></span></div>
+        <ul class="milestones" id="milestones-male">
+          <!-- Mốc động sẽ được JS render -->
+        </ul>
+    </div>
+
+    <div class="heart">❤️</div>
+
+    <div class="avatar-container">
+        <div class="avatar">
+            <img id="avatar-female-img" src="img/5.jpg" alt="Ảnh Nữ">
+        </div>
+        <p class="name" id="name-female">Ngọc Hà</p>
+        <p class="nickname" id="nickname-female">Biệt danh: Bé Tũn</p>
+        <p class="birthday" id="birthday-female">Sinh nhật: 18/08/2009</p>
+        <div class="birthday-countdown">Đếm ngược đến sinh nhật: <span id="countdown-birthday"></span></div>
+        <ul class="milestones" id="milestones-female">
+          <!-- Mốc động sẽ được JS render -->
+        </ul>
+    </div>
+</div>
+
+
+        <div class="day-counter">
+            <div class="time-display">
+                <div class="time-box">
+                    <span id="love-days">...</span>
+                    <p>Ngày</p>
+                    <span id="love-hours" class="time-small">...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="love-message">
+            <p id="love-message">"Yêu Cậu Yêu Cả Một Đời<br>Thương Cậu Thương Cả Một Đời Thanh Xuân"</p>
+            <button id="edit-message" style="background:#e91e63;color:#fff;border:none;border-radius:8px;padding:4px 12px;font-size:1em;cursor:pointer;margin-top:8px;">Chỉnh sửa lời nhắn</button>
+        </div>
+
+        <div class="memories-link">
+            <a href="album.html">Xem Album Ảnh Kỷ Niệm Của Chúng Ta</a>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="avatar-info.js"></script>
+    <script>
+      // Đếm ngược đến sinh nhật - lấy từ LocalStorage
+      function getBirthdayInfo(key) {
+        const s = localStorage.getItem(key);
+        if (!s) return null;
+        const d = new Date(s);
+        if (isNaN(d)) return null;
+        return { month: d.getMonth() + 1, day: d.getDate() };
+      }
+      function updateBirthdayCountdown(id, key) {
+        const info = getBirthdayInfo(key);
+        if (!info) {
+          document.getElementById(id).textContent = '';
+          return;
+        }
+        const birthday = getNextBirthday(info.month, info.day);
+        const now = new Date();
+        const diff = birthday - now;
+        if (diff > 0) {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const minutes = Math.floor((diff / (1000 * 60)) % 60);
+          const seconds = Math.floor((diff / 1000) % 60);
+          document.getElementById(id).textContent = `${days} ngày, ${hours} giờ, ${minutes} phút, ${seconds} giây`;
+        } else {
+          document.getElementById(id).textContent = 'Đã đến!';
+        }
+      }
+      function getNextBirthday(month, day) {
+        const now = new Date();
+        let year = now.getFullYear();
+        let birthday = new Date(year, month - 1, day);
+        if (birthday < now) birthday = new Date(year + 1, month - 1, day);
+        return birthday;
+      }
+      function updateAllBirthdays() {
+        updateBirthdayCountdown('countdown-birthday', 'birthdayFemale');
+        updateBirthdayCountdown('countdown-birthday-hao', 'birthdayMale');
+      }
+      updateAllBirthdays();
+      setInterval(updateAllBirthdays, 1000);
+      // --- TỰ ĐỘNG RESET VÀ LƯU DỮ LIỆU THEO ID TRÊN URL ---
+      function getUserId() {
+        const url = new URL(window.location.href);
+        return url.searchParams.get('id') || 'default';
+      }
+      function getStorageKey(key) {
+        return getUserId() + '_' + key;
+      }
+      function resetUserData() {
+        // Nếu không có dữ liệu cho id này, reset về mặc định
+        const keys = ['nameMale','nicknameMale','birthdayMale','avatarMale','nameFemale','nicknameFemale','birthdayFemale','avatarFemale','milestones','loveMessage','startDate'];
+        keys.forEach(k => {
+          localStorage.removeItem(getStorageKey(k));
+        });
+      }
+      // Reset dữ liệu mỗi lần reload trang
+      resetUserData();
+      function applyUserSettings() {
+        const s = localStorage;
+        // Nam
+        document.getElementById('name-male').innerHTML = `${s.getItem(getStorageKey('nameMale')) || 'Nhật Hào'} <button class='edit-btn' data-key='nameMale'>✏️</button>`;
+        document.getElementById('nickname-male').innerHTML = `Biệt danh: ${s.getItem(getStorageKey('nicknameMale')) || 'Heo'} <button class='edit-btn' data-key='nicknameMale'>✏️</button>`;
+        document.getElementById('birthday-male').innerHTML = `Sinh nhật: ${(s.getItem(getStorageKey('birthdayMale')) ? formatDate(s.getItem(getStorageKey('birthdayMale'))) : '18/06/2007')} <button class='edit-btn' data-key='birthdayMale'>✏️</button>`;
+        document.getElementById('avatar-male-img').src = s.getItem(getStorageKey('avatarMale')) || 'img/1.jpg';
+        document.getElementById('avatar-male-img').onclick = function() {
+          let url = prompt('Nhập link ảnh hoặc chọn file trong phần Cài đặt:', s.getItem(getStorageKey('avatarMale')) || '');
+          if (url) { s.setItem(getStorageKey('avatarMale'), url); applyUserSettings(); }
+        };
+        // Nữ
+        document.getElementById('name-female').innerHTML = `${s.getItem(getStorageKey('nameFemale')) || 'Ngọc Hà'} <button class='edit-btn' data-key='nameFemale'>✏️</button>`;
+        document.getElementById('nickname-female').innerHTML = `Biệt danh: ${s.getItem(getStorageKey('nicknameFemale')) || 'Bé Tũn'} <button class='edit-btn' data-key='nicknameFemale'>✏️</button>`;
+        document.getElementById('birthday-female').innerHTML = `Sinh nhật: ${(s.getItem(getStorageKey('birthdayFemale')) ? formatDate(s.getItem(getStorageKey('birthdayFemale'))) : '18/08/2009')} <button class='edit-btn' data-key='birthdayFemale'>✏️</button>`;
+        document.getElementById('avatar-female-img').src = s.getItem(getStorageKey('avatarFemale')) || 'img/5.jpg';
+        document.getElementById('avatar-female-img').onclick = function() {
+          let url = prompt('Nhập link ảnh hoặc chọn file trong phần Cài đặt:', s.getItem(getStorageKey('avatarFemale')) || '');
+          if (url) { s.setItem(getStorageKey('avatarFemale'), url); applyUserSettings(); }
+        };
+        // Mốc kỷ niệm động
+        let milestones = [];
+        try { milestones = JSON.parse(s.getItem(getStorageKey('milestones')) || '[]'); } catch {}
+        const milestonesMale = document.getElementById('milestones-male');
+        const milestonesFemale = document.getElementById('milestones-female');
+        milestonesMale.innerHTML = '';
+        milestonesFemale.innerHTML = '';
+        milestones.forEach((m, idx) => {
+          const txt = `${m.label}: ${formatDate(m.date)}`;
+          const li = document.createElement('li');
+          li.innerHTML = `${txt} <button class='edit-milestone' data-idx='${idx}'>✏️</button> <button class='remove-milestone' data-idx='${idx}'>🗑️</button>`;
+          milestonesMale.appendChild(li.cloneNode(true));
+          milestonesFemale.appendChild(li.cloneNode(true));
+        });
+        // Lời nhắn
+        document.getElementById('love-message').innerHTML = s.getItem(getStorageKey('loveMessage')) || 'Yêu Cậu Yêu Cả Một Đời<br>Thương Cậu Thương Cả Một Đời Thanh Xuân';
+        // Gắn sự kiện chỉnh sửa
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+          btn.onclick = function() {
+            let key = btn.dataset.key;
+            let val = prompt('Nhập giá trị mới:', s.getItem(getStorageKey(key)) || '');
+            if (val !== null) { s.setItem(getStorageKey(key), val); applyUserSettings(); }
+          };
+        });
+        document.getElementById('edit-message').onclick = function() {
+          let val = prompt('Nhập lời nhắn mới:', s.getItem(getStorageKey('loveMessage')) || '');
+          if (val !== null) { s.setItem(getStorageKey('loveMessage'), val); applyUserSettings(); }
+        };
+        document.querySelectorAll('.edit-milestone').forEach(btn => {
+          btn.onclick = function() {
+            let idx = +btn.dataset.idx;
+            let milestones = [];
+            try { milestones = JSON.parse(s.getItem(getStorageKey('milestones')) || '[]'); } catch {}
+            let label = prompt('Tên mốc:', milestones[idx].label);
+            let date = prompt('Ngày mốc (yyyy-mm-dd):', milestones[idx].date);
+            if (label && date) {
+              milestones[idx] = { label, date };
+              s.setItem(getStorageKey('milestones'), JSON.stringify(milestones));
+              applyUserSettings();
+            }
+          };
+        });
+        document.querySelectorAll('.remove-milestone').forEach(btn => {
+          btn.onclick = function() {
+            let idx = +btn.dataset.idx;
+            let milestones = [];
+            try { milestones = JSON.parse(s.getItem(getStorageKey('milestones')) || '[]'); } catch {}
+            milestones.splice(idx, 1);
+            s.setItem(getStorageKey('milestones'), JSON.stringify(milestones));
+            applyUserSettings();
+          };
+        });
+      }
+      function formatDate(str) {
+        const d = new Date(str);
+        if (isNaN(d)) return str;
+        return d.getDate().toString().padStart(2, '0') + '/' + (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
+      }
+      applyUserSettings();
+    </script>
+</body>
+</html>
